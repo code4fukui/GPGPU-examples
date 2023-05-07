@@ -1,0 +1,36 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>wgld.org WebGL2 sample 015</title>
+</head><body>
+
+<script type="module">
+import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+
+const vstf = `#version 300 es
+in vec3 param;
+
+out vec3 result;
+
+void main() {
+  result = param; //  + 1.0;
+}
+`;
+
+const gl = document.createElement("canvas").getContext("webgl2");
+
+const len = 1000;
+const param = new Float32Array(len * 3);
+for (let i = 0; i < len; i++) {
+  param[i] = i;
+}
+const result = new Float32Array(param.length);
+
+const gpu = new GPGPU(gl, vstf, { param }, { result });
+
+const res = gpu.calc();
+
+console.log(res);
+console.log(param, result);
+
+</script>
+
+</body></html>
