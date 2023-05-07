@@ -1,0 +1,240 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>wgld.org WebGL2 sample 015</title>
+</head><body>
+
+<script type="module">
+import { mat4, vec4, vec3, quat } from "https://glmatrix.net/src/index.js";
+import { createVertexShader, createFragmentShader, createProgram, createVBO, setAttributeVBO } from "https://code4fukui.github.io/eggl/glutil.js";
+import { waitImageLoad } from "https://js.sabae.cc/waitImageLoad.js";
+import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+
+const canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
+// canvas.onclick = () => canvas.requestFullscreen();
+document.body.style.margin = 0;
+onresize = () => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+};
+onresize();
+
+const touchHandler = (e) => {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+};
+addEventListener("touchstart", touchHandler, { passive: false });
+
+const vstf = `#version 300 es
+in vec3 position;
+in vec3 velocity;
+in vec4 color;
+
+uniform float time;
+uniform vec2 mousePosition; // -1.0 ~ 1.0
+uniform float mouseMovePower; // 0.0 ~ 1.0
+uniform int imageWidth;
+
+out vec3 vPosition;
+out vec3 vVelocity;
+out vec4 vColor;
+
+void main() {
+  if (mouseMovePower > 0.001) {
+    vPosition = position + velocity * 0.07 * mouseMovePower;
+    vec3 p = vec3(mousePosition, sin(time) * 0.25) - position;
+    vVelocity = normalize(velocity + p * 0.2 * mouseMovePower);
+  } else {
+    int n = gl_VertexID;
+    int x = n % imageWidth;
+    int y = n / imageWidth;
+    float w = float(imageWidth / 2);
+    vPosition = vec3(float(x) / w - 1.0, -float(y) / w + 1.0, 0);
+    vVelocity = velocity;
+  }
+  vColor = color;
+}
+`;
+
+const vsmain = `#version 300 es
+in vec3 position;
+in vec4 color;
+
+uniform mat4 vpMatrix;
+
+out vec4 vColor;
+
+void main() {
+  vColor = color;
+  gl_Position = vpMatrix * vec4(position, 1.0);
+  gl_PointSize = 1.0;
+}
+`;
+
+const fsmain = `#version 300 es
+precision highp float;
+
+in vec4 vColor;
+out vec4 outColor;
+
+void main() {
+  outColor = vColor;
+}
+`;
+
+
+// generate imagedata
+const img = new Image();
+img.src = "sabae.jpg";
+await waitImageLoad(img);
+const c = document.createElement("canvas");
+const ctx = c.getContext("2d");
+const imageWidth = img.width;
+const imageHeight = img.height;
+c.width = img.width;
+c.height = img.height;
+ctx.drawImage(img, 0, 0, imageWidth, imageHeight);
+const targetImageData = ctx.getImageData(0, 0, imageWidth, imageHeight);
+
+// transform feedback object
+const gl = canvas.getContext("webgl2");
+
+// in vertices
+const position = [];
+const velocity = [];
+const color = [];
+{
+  for (let i = 0; i < imageHeight; i++) {
+    const y = i / imageHeight * 2.0 - 1.0;
+    const k = i * imageWidth;
+    for (let j = 0; j < imageWidth; j++) {
+      const x = j / imageWidth * 2.0 - 1.0;
+      const l = (k + j) * 4;
+      position.push(x, -y, 0.0);
+      const m = Math.sqrt(x * x + y * y);
+      velocity.push(x / m, -y / m, 0.0);
+      color.push(
+        targetImageData.data[l]     / 255,
+        targetImageData.data[l + 1] / 255,
+        targetImageData.data[l + 2] / 255,
+        targetImageData.data[l + 3] / 255
+      );
+    }
+  }
+}
+console.log(position.length / 3)
+
+// out vertices
+const vPosition = new Float32Array(position.length);
+const vVelocity = new Float32Array(velocity.length);
+const vColor = new Float32Array(color.length);
+
+const gpu = new GPGPU(gl, vstf, { position, velocity, color }, { vPosition, vVelocity, vColor });
+
+gpu.univ.imageWidth = imageWidth;
+
+
+// feedback in shader
+const prog2 = createProgram(
+  gl,
+  createVertexShader(gl, vsmain),
+  createFragmentShader(gl, fsmain)
+);
+const attLocation2 = [
+  gl.getAttribLocation(prog2, "position"),
+  gl.getAttribLocation(prog2, "color"),
+];
+const attStride2 = [3, 4];
+
+const vpMatrixUni2 = gl.getUniformLocation(prog2, "vpMatrix");
+
+
+// matrix
+const vpMatrix = mat4.create();
+{
+  const p = mat4.create();
+  const v = mat4.create();
+  mat4.lookAt(v, [0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+  mat4.perspective(p, 60 / 180 * Math.PI, canvas.width / canvas.height, 0.1, 10.0);
+  mat4.multiply(vpMatrix, p, v);
+}
+
+// flags
+gl.disable(gl.DEPTH_TEST);
+gl.disable(gl.CULL_FACE);
+gl.enable(gl.BLEND);
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ONE, gl.ONE);
+gl.disable(gl.RASTERIZER_DISCARD);
+
+// ui
+gpu.univ.mousePosition = [0.0, 0.0];
+let isMousedown = false;
+gpu.univ.mouseMovePower = 0.0;
+
+// mousemove event
+canvas.addEventListener("mousedown", (e) => {
+  isMousedown = true;
+  gpu.univ.mouseMovePower = 1.0;
+}, false);
+canvas.addEventListener("mouseup", (e) => {
+  isMousedown = false;
+}, false);
+canvas.addEventListener("mousemove", (e) => {
+  const bound = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - bound.left;
+  const y = e.clientY - bound.top;
+  gpu.univ.mousePosition[0] = x / bound.width * 2.0 - 1.0;
+  gpu.univ.mousePosition[1] = -(y / bound.height * 2.0 - 1.0);
+}, false);
+// setting
+const startTime = performance.now();
+let idx = 0;
+
+const render = () => {
+  gpu.univ.time = performance.now() - startTime;
+
+  // mouse move power
+  if (!isMousedown) {
+    gpu.univ.mouseMovePower *= 0.97;
+  }
+
+  // increment
+  const countIndex = idx;
+  const invertIndex = 1 - countIndex;
+  idx = 1 - idx;
+
+  // program (GPU)
+  const res = gpu.calc(true);
+
+  // feedback to screen
+  {
+    // clear
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // program
+    gl.useProgram(prog2);
+
+    // set vbo
+    setAttributeVBO(gl, [res[0], res[2]], attLocation2, attStride2);
+
+    // push and render
+    gl.uniformMatrix4fv(vpMatrixUni2, false, vpMatrix);
+    gl.drawArrays(gl.POINTS, 0, position.length / 3);
+    //gl.drawArrays(gl.LINES, 0, position.length / 3);
+    //gl.drawArrays(gl.LINE_STRIP, 0, position.length / 3);
+    //gl.drawArrays(gl.LINE_LOOP, 0, position.length / 3);
+    
+    gl.flush();
+  }
+
+  // animation loop
+  requestAnimationFrame(render);
+};
+render();
+
+</script>
+
+</body></html>
