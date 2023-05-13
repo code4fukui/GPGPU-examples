@@ -1,0 +1,47 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>wgld.org WebGL2 sample 015</title>
+</head><body>
+
+<script type="module">
+//import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+import { GPGPU } from "./GPGPU.js";
+
+const vstf = `#version 300 es
+in vec3 position;
+
+out vec3 vPosition;
+
+void main() {
+  vPosition = position + 1.0;
+}
+`;
+const cpu_calc = (position, vPosition) => {
+  for (let i = 0; i < len; i++) {
+    vPosition[i] = position[i] + 1.0;
+  }
+};
+
+const canvas = document.createElement("canvas");
+const gl = canvas.getContext("webgl2");
+
+const len = 10000000;
+const position = new Float32Array(len * 3);
+for (let i = 0; i < len; i++) {
+  position[i] = i;
+}
+
+const vPosition = new Float32Array(position.length);
+
+const gpu = new GPGPU(gl, vstf, { position }, { vPosition });
+
+const st = performance.now();
+const res = gpu.calc();
+//const res = cpu_calc(position, vPosition);
+const dt = performance.now() - st;
+
+console.log(res, dt);
+console.log(gpu.inv.position, gpu.outv.vPosition);
+
+</script>
+
+</body></html>

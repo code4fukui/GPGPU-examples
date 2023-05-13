@@ -6,8 +6,8 @@
 import { mat4, vec4, vec3, quat } from "https://glmatrix.net/src/index.js";
 import { createVertexShader, createFragmentShader, createProgram, createVBO, setAttributeVBO } from "https://code4fukui.github.io/eggl/glutil.js";
 import { waitImageLoad } from "https://js.sabae.cc/waitImageLoad.js";
-import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
-//import { GPGPU } from "./GPGPU.js";
+//import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+import { GPGPU } from "./GPGPU.js";
 
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
@@ -206,6 +206,8 @@ const render = () => {
 
   // program (GPU)
   const res = gpu.calc(true);
+  //console.log(vPosition);
+  console.log(gpu.inv.position);
 
   // feedback to screen
   {
