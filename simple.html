@@ -9,7 +9,6 @@
 <script type="module">
 //import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
 import { GPGPU } from "./GPGPU.js";
-import { sleep } from "https://js.sabae.cc/sleep.js";
 
 const vstf = `#version 300 es
 in float position;
@@ -28,8 +27,7 @@ for (let i = 0; i < len; i++) {
 
 const vPosition = new Float32Array(position.length);
 
-const gl = document.createElement("canvas").getContext("webgl2");
-const gpu = new GPGPU(gl, vstf, { position }, { vPosition });
+const gpu = new GPGPU(null, vstf, { position }, { vPosition });
 
 const st1 = performance.now();
 const res1 = gpu.calc();

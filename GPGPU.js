@@ -23,6 +23,9 @@ export const createVBO = (gl, data, dynamic = false) => {
 
 export class GPGPU {
   constructor(gl, vertexshader, invars, outvars) {
+    if (!gl) {
+      gl = document.createElement("canvas").getContext("webgl2");
+    }
     this.gl = gl;
     this.vs = vertexshader;
     this.inv = invars;
