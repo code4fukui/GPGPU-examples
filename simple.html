@@ -1,36 +1,52 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
-<title>wgld.org WebGL2 sample 015</title>
+<title>GPGPU simple demo by WebGL2</title>
 </head><body>
 
+<h1>GPGPU simple demo by WebGL2</h1>
+
+<div id=result></div>
+
 <script type="module">
-import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+//import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+import { GPGPU } from "./GPGPU.js";
+import { sleep } from "https://js.sabae.cc/sleep.js";
 
 const vstf = `#version 300 es
-in vec3 param;
-
-out vec3 result;
+in float position;
+out float vPosition;
 
 void main() {
-  result = param; //  + 1.0;
+  vPosition = sin(position);
 }
 `;
 
-const gl = document.createElement("canvas").getContext("webgl2");
-
-const len = 1000;
-const param = new Float32Array(len * 3);
+const len = 10000 * 10000;
+const position = new Float32Array(len);
 for (let i = 0; i < len; i++) {
-  param[i] = i;
+  position[i] = i;
 }
-const result = new Float32Array(param.length);
 
-const gpu = new GPGPU(gl, vstf, { param }, { result });
+const vPosition = new Float32Array(position.length);
 
-const res = gpu.calc();
+const gl = document.createElement("canvas").getContext("webgl2");
+const gpu = new GPGPU(gl, vstf, { position }, { vPosition });
 
-console.log(res);
-console.log(param, result);
+const st1 = performance.now();
+const res1 = gpu.calc();
+const dt1 = performance.now() - st1;
+
+console.log(gpu.inv.position, gpu.outv.vPosition);
+result.innerHTML = `GPU: ${dt1.toFixed(1)}msec`;
 
 </script>
+
+<hr>
+<a href=https://github.com/GPGPU-examples/>src on GitHub</a>
+
+<style>
+#result {
+  padding: 1em 0;
+}
+</style>
 
 </body></html>

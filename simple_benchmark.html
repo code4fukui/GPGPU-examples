@@ -1,0 +1,77 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>GPGPU simple demo by WebGL2</title>
+</head><body>
+
+<h1>GPGPU simple demo by WebGL2</h1>
+
+<button id=btn>test</button>
+
+<div id=result></div>
+
+<script type="module">
+//import { GPGPU } from "https://code4fukui.github.io/eggl/GPGPU.js";
+import { GPGPU } from "./GPGPU.js";
+import { sleep } from "https://js.sabae.cc/sleep.js";
+
+btn.onclick = async () => {
+  const vstf = `#version 300 es
+  in float position;
+  out float vPosition;
+
+  void main() {
+    vPosition = sin(position);
+  }
+  `;
+  const cpu_calc = (position, vPosition) => {
+    for (let i = 0; i < len; i++) {
+      vPosition[i] = Math.sin(position[i]);
+    }
+  };
+
+
+  const len = 10000 * 10000;
+  const position = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
+    position[i] = i;
+  }
+
+  result.textContent = "GPU calculating...";
+  await sleep(10);
+
+  const vPosition = new Float32Array(position.length);
+
+  const gl = document.createElement("canvas").getContext("webgl2");
+  const gpu = new GPGPU(gl, vstf, { position }, { vPosition });
+
+  const st1 = performance.now();
+  const res1 = gpu.calc();
+  const dt1 = performance.now() - st1;
+
+  console.log(gpu.inv.position, gpu.outv.vPosition);
+  result.textContent = "CPU calculating...";
+  await sleep(10);
+
+  for (let i = 0; i < vPosition.length; i++) {
+    vPosition[i] = 0;
+  }
+
+  const st2 = performance.now();
+  const res2 = cpu_calc(position, vPosition);
+  const dt2 = performance.now() - st2;
+
+  result.innerHTML = `GPU: ${dt1.toFixed(1)}msec<br>CPU: ${dt2.toFixed(1)}msec`;
+  console.log(gpu.inv.position, gpu.outv.vPosition);
+};
+
+</script>
+
+<hr>
+<a href=https://github.com/GPGPU-examples/>src on GitHub</a>
+
+<style>
+#result {
+  padding: 1em 0;
+}
+</style>
+
+</body></html>
