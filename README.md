@@ -1,5 +1,7 @@
 # GPGPU-examples
 
+> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
+
 A collection of examples demonstrating the use of GPGPU (General-Purpose Graphics Processing Unit) with WebGL2.
 
 ## Demo

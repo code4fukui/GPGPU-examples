@@ -1,6 +1,6 @@
 # GPGPU-examples
 
-GPGPU (General-Purpose Graphics Processing Unit) を使ったWebGL2のサンプルコレクションです。
+WebGL2を使ったGPGPU (General-Purpose Graphics Processing Unit) の活用例を紹介するサンプルコレクションです。
 
 ## デモ
 - [デモ](https://code4fukui.github.io/GPGPU-examples/)
