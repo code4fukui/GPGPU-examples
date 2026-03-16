@@ -50,4 +50,4 @@ result.innerHTML = `GPU: ${dt1.toFixed(1)}msec`;
 - [glMatrix](https://glmatrix.net/)
 
 ## License
-MIT License
+MIT License — see [LICENSE](LICENSE).
