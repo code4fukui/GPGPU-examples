@@ -1,19 +1,17 @@
 # GPGPU-examples
 
-> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
+WebGL2を用いたGPGPU（General-Purpose Graphics Processing Unit）の実装例を集めたリポジトリです。
 
-A collection of examples demonstrating the use of GPGPU (General-Purpose Graphics Processing Unit) with WebGL2.
-
-## Demo
+## デモ
 - [demo](https://code4fukui.github.io/GPGPU-examples/)
 - [simple](https://code4fukui.github.io/GPGPU-examples/simple.html)
 
-## Features
-- Utilizes WebGL2 transform feedback for GPGPU calculations
-- Includes various example applications showcasing GPGPU capabilities
-- Provides a reusable `GPGPU` class for easy integration into projects
+## 特徴
+- WebGL2のTransform Feedbackを活用したGPGPU計算
+- GPGPUの機能を示す様々なサンプルアプリケーションを収録
+- プロジェクトへ簡単に組み込める再利用可能な `GPGPU` クラスを提供
 
-## Usage
+## 使い方
 ```javascript
 import { GPGPU } from "https://code4fukui.github.io/GPGPU-examples/GPGPU.js";
 
@@ -45,9 +43,9 @@ console.log(gpu.inv.position, gpu.outv.vPosition);
 result.innerHTML = `GPU: ${dt1.toFixed(1)}msec`;
 ```
 
-## Dependencies
-- [GPGPU.js and glutil of eggl](https://github.com/code4fukui/eggl/)
+## 依存関係
+- [eggl の GPGPU.js および glutil](https://github.com/code4fukui/eggl/)
 - [glMatrix](https://glmatrix.net/)
 
-## License
-MIT License — see [LICENSE](LICENSE).
+## ライセンス
+MIT License — 詳細は [LICENSE](LICENSE) をご覧ください。
